@@ -9,7 +9,7 @@ from sklearn.datasets import fetch_kddcup99
 # Create Data directory if it doesn't exist
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-data_dir = os.path.join(base_dir, "Data")
+data_dir = os.path.join(base_dir, "../Data")
 os.makedirs(data_dir, exist_ok=True)
 
 # Save SKLearn dataset to CSV
