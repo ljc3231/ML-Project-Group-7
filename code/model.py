@@ -3,6 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import OneClassSVM
 import pandas as pd
 
+"""
+Currently assumes last row is the label, our data doesn't really lend itself to anomaly detection if we are trying to
+predict which particular anomaly occurred so One-Class SVM may not work with this format.
+"""
 def svm(df):
     y = df.iloc[:, -1]
     X = df.iloc[:, :-1]
