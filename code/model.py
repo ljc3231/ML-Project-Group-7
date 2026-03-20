@@ -1,10 +1,7 @@
-from sklearn.ensemble import IsolationForest
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
-
-from common import csv_to_df
+import pandas as pd
 
 def svm(df):
     y = df.iloc[:, -1]
@@ -22,7 +19,7 @@ def svm(df):
 
 def main():
     file_path = "../Data/preprocessed/preprocessed_kddcup_10_percent.csv"
-    df = csv_to_df(file_path)
+    df = pd.read_csv(file_path)
     print(svm(df))
 
 if __name__ == "__main__":
