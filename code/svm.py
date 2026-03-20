@@ -1,3 +1,6 @@
+import pickle
+import sys
+
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.svm import OneClassSVM
@@ -7,7 +10,7 @@ import pandas as pd
 Currently assumes last row is the label, our data doesn't really lend itself to anomaly detection if we are trying to
 predict which particular anomaly occurred so One-Class SVM may not work with this format.
 """
-def svm(df):
+def train_svm(df):
     y = df.iloc[:, -1]
     X = df.iloc[:, :-1]
 
@@ -21,10 +24,25 @@ def svm(df):
 
     return accuracy
 
+def save_svm(svm_model, filename):
+    with open(filename, 'wb') as file:
+        pickle.dump(svm_model, file)
+
+def load_svm(filename):
+    with open(filename, 'rb') as file:
+        return pickle.load(file)
+
 def main():
     file_path = "../Data/preprocessed/preprocessed_kddcup_10_percent.csv"
-    df = pd.read_csv(file_path)
-    print(svm(df))
+    if sys.argv[0] == "train":
+        df = pd.read_csv(file_path)
+        model = train_svm(df)
+        save_svm(model, sys.argv[1])
+    else:
+        model = load_svm(sys.argv[1])
+
+    # do stuff with the model
+
 
 if __name__ == "__main__":
     main()
