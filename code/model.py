@@ -1,6 +1,6 @@
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
+from sklearn.svm import OneClassSVM
 import pandas as pd
 
 def svm(df):
@@ -9,7 +9,7 @@ def svm(df):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    svm_model = SVC(kernel='rbf', random_state=42)
+    svm_model = OneClassSVM(kernel='rbf', degree=3, gamma=0.1, nu=0.01)
     svm_model.fit(X_train, y_train)
 
     y_pred = svm_model.predict(X_test)
