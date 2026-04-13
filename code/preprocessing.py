@@ -92,14 +92,14 @@ def main():
 
     grid_search.fit(X_train, y_train)
 
-    print("Best parameters:", grid_search.best_params_)
-    print("Best cross-validation score:", grid_search.best_score_)
+    #print("Best parameters:", grid_search.best_params_)
+    #print("Best cross-validation score:", grid_search.best_score_)
 
     best_model = grid_search.best_estimator_
 
     y_pred = best_model.predict(X_test)
-    print("Test set results:")
-    print(classification_report(y_test, y_pred))
+    #print("Test set results:")
+    #print(classification_report(y_test, y_pred))
 
     pipeline_no_clf = Pipeline(best_model.steps[:-1])
     X_train_pca = pipeline_no_clf.transform(X_train)
@@ -117,8 +117,8 @@ def main():
     X_train_pca_df.to_csv(os.path.join(output_dir, 'train_pca_kddcup_10_percent.csv'), index=False)
     X_test_pca_df.to_csv(os.path.join(output_dir, 'test_pca_kddcup_10_percent.csv'), index=False)
     
-    print("\nPCA-transformed training data:")
-    print(X_train_pca_df.head())
+    #print("\nPCA-transformed training data:")
+    #print(X_train_pca_df.head())
 
 
 
