@@ -43,10 +43,10 @@ def main():
         suffix = "kddcup_full.csv"
 
     training_data_file = os.path.join(
-        base_dir, "..", "Data", "preprocessed", "train_pca_kddcup_10_percent.csv"
+        base_dir, "..", "data", "preprocessed", "train_pca_" + suffix
     )
     testing_data_file = os.path.join(
-        base_dir, "..", "Data", "preprocessed", "test_pca_kddcup_10_percent.csv"
+        base_dir, "..", "data", "preprocessed", "test_pca_" + suffix
     )
 
     training_data = pd.read_csv(training_data_file)
