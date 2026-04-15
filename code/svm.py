@@ -12,7 +12,7 @@ TRAIN_FULL = "train_pca_kddcup_full.csv"
 TRAIN_10 = "train_pca_kddcup_10_percent.csv"
 TEST_FULL = "test_pca_kddcup_full.csv"
 TEST_10 = "test_pca_kddcup_10_percent.csv"
-MODEL_FILE = "models/svm_model.pkl"
+MODEL_FILE = "data/models/svm_model.pkl"
 
 def output_timing(seconds):
     """
@@ -40,10 +40,7 @@ def train_svm(file_path):
         df = pd.read_csv(file_path)
     except FileNotFoundError:
         print(f"File not found: {file_path}")
-        return
-    if not verify_save_location(MODEL_FILE):
-        print(f"Model file not found: {MODEL_FILE}")
-        return
+        return None
 
     X = df.iloc[:, :-1]
 
@@ -65,18 +62,6 @@ def test_svm(svm_model, df):
     y_pred = svm_model.predict(X)
     return y, y_pred
 
-def verify_save_location(filename):
-    """
-    Verify a location can be written to
-    :param filename: Path to test
-    :return: Whether the location can be written to
-    """
-    try:
-        with open(filename, 'wb') as _:
-            return True
-    except FileNotFoundError:
-        return False
-
 def save_svm(svm_model, filename):
     """
     Serialize a model to a file
@@ -96,7 +81,11 @@ def load_svm(filename):
     try:
         with open(filename, 'rb') as file:
             return pickle.load(file)
+    except EOFError:
+        print(f"{filename} is empty or corrupted.")
+        return None
     except FileNotFoundError:
+        print(f"Model file not found: {filename}")
         return None
 
 def main():
@@ -104,6 +93,7 @@ def main():
     parser.add_argument("mode", choices=["train", "test"], help="Run mode")
     parser.add_argument("model_file", nargs="?", default=MODEL_FILE, help="Model file path")
     parser.add_argument("--full", action="store_true", help="Use full dataset")
+    parser.add_argument("--partial", action="store_true", help="Use partial dataset")
 
     args = parser.parse_args()
 
@@ -114,7 +104,7 @@ def main():
     else:
         file_name = TEST_FULL if args.full else TEST_10
 
-    file_path = os.path.join(base_dir, '..', 'Data', 'preprocessed', file_name)
+    file_path = os.path.join(base_dir, '..', 'data', 'preprocessed', file_name)
     model_path = os.path.join(base_dir, '..', args.model_file)
 
     if args.mode == "train":
@@ -132,7 +122,6 @@ def main():
 
         model = load_svm(model_path)
         if model is None:
-            print(f"Model not found: {args.model_file}")
             return
 
         print(f"Testing {args.model_file} on {file_path}")
