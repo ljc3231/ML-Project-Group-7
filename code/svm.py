@@ -1,6 +1,6 @@
 import os
 import pickle
-import sys
+import argparse
 from time import perf_counter
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
@@ -93,43 +93,59 @@ def load_svm(filename):
     :param filename: File to load
     :return: Loaded model
     """
-    with open(filename, 'rb') as file:
-        return pickle.load(file)
+    try:
+        with open(filename, 'rb') as file:
+            return pickle.load(file)
+    except FileNotFoundError:
+        return None
 
 def main():
-    if len(sys.argv) < 2 or len(sys.argv) > 4 or  sys.argv[1] not in ["train", "test"]:
-        print("Usage: python svm.py <train|test> [--full] [model_file]")
-        return
+    parser = argparse.ArgumentParser(description="Train or test an SVM model")
+    parser.add_argument("mode", choices=["train", "test"], help="Run mode")
+    parser.add_argument("model_file", nargs="?", default=MODEL_FILE, help="Model file path")
+    parser.add_argument("--full", action="store_true", help="Use full dataset")
+
+    args = parser.parse_args()
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    file_index = 2
-    if len(sys.argv) == 4 and sys.argv[2] == "--full":
-        file_path = os.path.join(base_dir, '..', 'Data', 'preprocessed', TRAIN_FULL if sys.argv[1] == "train" else TEST_FULL)
-        file_index += 1
+    if args.mode == "train":
+        file_name = TRAIN_FULL if args.full else TRAIN_10
     else:
-        file_path = os.path.join(base_dir, '..', 'Data', 'preprocessed', TRAIN_10 if sys.argv[1] == "train" else TEST_10)
+        file_name = TEST_FULL if args.full else TEST_10
 
-    if sys.argv[1] == "train":
+    file_path = os.path.join(base_dir, '..', 'Data', 'preprocessed', file_name)
+    model_path = os.path.join(base_dir, '..', args.model_file)
+
+    if args.mode == "train":
         start = perf_counter()
         model = train_svm(file_path)
         print(output_timing(perf_counter() - start))
-        save_svm(model, MODEL_FILE)
+        save_svm(model, model_path)
+
     else:
-        print(f"Testing {sys.argv[file_index]}")
-        df = pd.read_csv(file_path)
-        model = load_svm(os.path.join(base_dir, sys.argv[file_index]))
+        try:
+            df = pd.read_csv(file_path)
+        except FileNotFoundError:
+            print(f"File not found: {file_path}")
+            return
+
+        model = load_svm(model_path)
+        if model is None:
+            print(f"Model not found: {args.model_file}")
+            return
+
+        print(f"Testing {args.model_file} on {file_path}")
         y_test, y_pred = test_svm(model, df)
+
         cm = confusion_matrix(y_test, y_pred)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot()
         plt.show()
+
         print("Classification Report:")
         print(classification_report(y_test, y_pred))
 
 
-
-
 if __name__ == "__main__":
     main()
-
