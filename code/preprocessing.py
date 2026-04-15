@@ -1,17 +1,16 @@
 import os
+import sys
 
-import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 MINIMUM_CROSS_CORRELATION = 0.001
+USE_PARTIAL_DATA = True
 
 
 def csv_to_df(file_path):
@@ -85,7 +84,13 @@ def reject_invariant_features(df):
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, "..", "Data", "kddcup_10_percent.csv")
+
+    if USE_PARTIAL_DATA:
+        suffix = "kddcup_10_percent.csv"
+    else:
+        suffix = "kddcup_full.csv"
+
+    file_path = os.path.join(base_dir, "..", "data", suffix)
 
     processed_data = csv_to_df(file_path)
     processed_data = reject_invariant_features(processed_data)
@@ -93,7 +98,7 @@ def main():
     X = processed_data.drop(columns=["is_anomaly"])
     y = pd.DataFrame(processed_data["is_anomaly"])
 
-    pca = PCA(n_components=12)
+    pca = PCA(n_components=5)
     X_pca = pd.DataFrame(pca.fit_transform(X))
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -106,16 +111,19 @@ def main():
     testing_data = pd.DataFrame(X_test)
     testing_data["is_anomaly"] = y_test
 
-    output_dir = os.path.join(base_dir, "..", "Data", "preprocessed")
+    output_dir = os.path.join(base_dir, "..", "data", "preprocessed")
     os.makedirs(output_dir, exist_ok=True)
 
-    training_data.to_csv(
-        os.path.join(output_dir, "train_pca_kddcup_10_percent.csv"), index=False
-    )
-    testing_data.to_csv(
-        os.path.join(output_dir, "test_pca_kddcup_10_percent.csv"), index=False
-    )
+    training_data.to_csv(os.path.join(output_dir, "train_pca_" + suffix), index=False)
+    testing_data.to_csv(os.path.join(output_dir, "test_pca_" + suffix), index=False)
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "full":
+            USE_PARTIAL_DATA = False
+        elif sys.argv[1] != "partial":
+            print("Unknown arguments; stopping execution")
+            exit(1)
+
     main()

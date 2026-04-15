@@ -1,9 +1,12 @@
 import os
+import sys
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+USE_PARTIAL_DATA = True
 
 
 def train_model(training_data):
@@ -34,6 +37,11 @@ def evaluate_model(model, testing_data):
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
+    if USE_PARTIAL_DATA:
+        suffix = "kddcup_10_percent.csv"
+    else:
+        suffix = "kddcup_full.csv"
+
     training_data_file = os.path.join(
         base_dir, "..", "Data", "preprocessed", "train_pca_kddcup_10_percent.csv"
     )
@@ -50,4 +58,11 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "full":
+            USE_PARTIAL_DATA = False
+        elif sys.argv[1] != "partial":
+            print("Unknown arguments; stopping execution")
+            exit(1)
+
     main()
