@@ -1,6 +1,7 @@
 import os
 import pickle
 import argparse
+from datetime import datetime
 from time import perf_counter
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
@@ -60,7 +61,7 @@ def test_svm(svm_model, df):
     X = df.iloc[:, :-1]
 
     y_pred = svm_model.predict(X)
-    return y, y_pred
+    return y, (y_pred + 1) // 2
 
 def save_svm(svm_model, filename):
     """
@@ -127,10 +128,18 @@ def main():
         print(f"Testing {args.model_file} on {file_path}")
         y_test, y_pred = test_svm(model, df)
 
-        cm = confusion_matrix(y_test, y_pred)
+        y_pred = pd.Series(y_pred, name="is_anomaly")
+
+        cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot()
-        plt.show()
+
+        try:
+            plt.savefig(f"data/plots/{args.model_file.split("/")[-1]}_{datetime.now().strftime("%y-%m-%d_%H:%M:%S")}.png")
+        except FileNotFoundError:
+            print("Could not save confusion matrix plot")
+            plt.show()
+
 
         print("Classification Report:")
         print(classification_report(y_test, y_pred))
