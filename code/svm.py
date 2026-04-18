@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-gpu = False
+GPU = False
 
 try:
     from cuml.svm import SVC
     from cuml.model_selection import GridSearchCV
     import cudf as pd
-    gpu = True
+    GPU = True
 except ImportError:
     from sklearn.svm import SVC
     from sklearn.model_selection import GridSearchCV
@@ -95,7 +95,7 @@ def train_svm(file_path):
         param_grid=param_grid,
         cv=5,
         scoring='f1',
-        n_jobs=1 if gpu else -1,
+        n_jobs=1 if GPU else -1,
         verbose=2
     )
     search.fit(X_train_cpu, y_train_cpu)
@@ -116,7 +116,7 @@ def train_svm(file_path):
 
     print(f"Best parameters: {search.best_params_}")
 
-    return best_model.as_sklearn() if gpu else best_model
+    return best_model.as_sklearn() if GPU else best_model
 
 def test_svm(svm_model, df):
     X = df.iloc[:, :-1].astype(np.float32)
