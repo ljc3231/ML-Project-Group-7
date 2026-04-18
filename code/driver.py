@@ -39,8 +39,8 @@ def main():
     print("Running isolation_forest.py")
     subprocess.run(["python", base_dir + "/isolation_forest.py", sys.argv[1]])
 
-    # print("Running SVM")
-    # subprocess.run(["python", base_dir + "/svm.py", sys.argv[1]])
+    print("Running SVM")
+    subprocess.run(["python", base_dir + "/svm.py", "test", f"--{sys.argv[1]}"])
 
 
 if __name__ == "__main__":
