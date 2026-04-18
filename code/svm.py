@@ -4,12 +4,20 @@ import argparse
 from time import perf_counter
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
-from cuml.svm import SVC
-from cuml.model_selection import GridSearchCV
-import cudf
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+
+gpu = False
+
+try:
+    from cuml.svm import SVC
+    from cuml.model_selection import GridSearchCV
+    import cudf as pd
+    gpu = True
+except ImportError:
+    from sklearn.svm import SVC
+    from sklearn.model_selection import GridSearchCV
+    import pandas as pd
 
 TRAIN_FULL = "train_pca_kddcup_full.csv"
 TRAIN_10 = "train_pca_kddcup_10_percent.csv"
@@ -50,7 +58,8 @@ def test_and_eval(model, file_path):
     print("Classification Report:")
     print(classification_report(y_test, y_pred))
 
-
+    print("Confusion Matrix:")
+    print(cm)
 
 def train_svm(file_path):
     """
@@ -60,7 +69,7 @@ def train_svm(file_path):
     """
     print(f"Training SVM on {file_path}")
     try:
-        df = cudf.read_csv(file_path)
+        df = pd.read_csv(file_path)
     except FileNotFoundError:
         print(f"File not found: {file_path}")
         return None
@@ -91,7 +100,7 @@ def train_svm(file_path):
 
     print(f"Best parameters: {search.best_params_}")
 
-    return best_model.as_sklearn()
+    return best_model.as_sklearn() if gpu else best_model
 
 def test_svm(svm_model, df):
     """
