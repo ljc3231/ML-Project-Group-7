@@ -1,13 +1,15 @@
 import os
 import pickle
 import argparse
-from datetime import datetime
 from time import perf_counter
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
-from sklearn.svm import OneClassSVM
+from cuml.svm import SVC
+from cuml.model_selection import GridSearchCV
+import cudf
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 TRAIN_FULL = "train_pca_kddcup_full.csv"
 TRAIN_10 = "train_pca_kddcup_10_percent.csv"
@@ -29,6 +31,26 @@ def output_timing(seconds):
     result += f", {int(seconds)} seconds"
     return result
 
+def test_and_eval(model, file_path):
+    try:
+        df = pd.read_csv(file_path)
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return
+
+    y_test, y_pred = test_svm(model, df)
+
+    y_pred = pd.Series(y_pred, name="is_anomaly")
+
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot()
+    plt.show()
+
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+
+
 
 def train_svm(file_path):
     """
@@ -38,17 +60,38 @@ def train_svm(file_path):
     """
     print(f"Training SVM on {file_path}")
     try:
-        df = pd.read_csv(file_path)
+        df = cudf.read_csv(file_path)
     except FileNotFoundError:
         print(f"File not found: {file_path}")
         return None
 
-    X = df.iloc[:, :-1]
+    X = df.iloc[:, :-1].astype(np.float32)
+    y = df.iloc[:, -1].astype(np.int32)
 
-    svm_model = OneClassSVM(kernel='rbf', gamma='auto')
-    svm_model.fit(X)
+    base_model = SVC(kernel='rbf', class_weight='balanced')
 
-    return svm_model
+    param_grid = {
+        'C': [0.1, 1, 10, 100],
+        'gamma': ['scale', 0.1, 0.01, 0.001]
+    }
+
+    X_train_cpu = X.to_pandas().values.astype('float32')
+    y_train_cpu = y.to_pandas().values.astype('int32')
+
+    search = GridSearchCV(
+        estimator=base_model,
+        param_grid=param_grid,
+        cv=5,
+        scoring='f1',
+        n_jobs=1,
+        verbose=2
+    )
+    search.fit(X_train_cpu, y_train_cpu)
+    best_model = search.best_estimator_
+
+    print(f"Best parameters: {search.best_params_}")
+
+    return best_model.as_sklearn()
 
 def test_svm(svm_model, df):
     """
@@ -57,10 +100,10 @@ def test_svm(svm_model, df):
     :param df: Dataframe containing test-data
     :return: test labels and predicted labels
     """
-    y = df.iloc[:, -1]
-    X = df.iloc[:, :-1]
+    X = df.iloc[:, :-1].astype(np.float32)
+    y = df.iloc[:, -1].astype(np.int32)
 
-    y_pred = svm_model.predict(X)
+    y_pred = svm_model.predict(X.values)
     return y, (y_pred + 1) // 2
 
 def save_svm(svm_model, filename):
@@ -114,35 +157,17 @@ def main():
         print(output_timing(perf_counter() - start))
         save_svm(model, model_path)
 
+        print("Finished training, testing against training data")
+        test_and_eval(model, file_path)
+
     else:
-        try:
-            df = pd.read_csv(file_path)
-        except FileNotFoundError:
-            print(f"File not found: {file_path}")
-            return
 
         model = load_svm(model_path)
         if model is None:
             return
 
         print(f"Testing {args.model_file} on {file_path}")
-        y_test, y_pred = test_svm(model, df)
-
-        y_pred = pd.Series(y_pred, name="is_anomaly")
-
-        cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-        disp.plot()
-
-        try:
-            plt.savefig(f"data/plots/{args.model_file.split("/")[-1]}_{datetime.now().strftime("%y-%m-%d_%H:%M:%S")}.png")
-        except FileNotFoundError:
-            print("Could not save confusion matrix plot")
-            plt.show()
-
-
-        print("Classification Report:")
-        print(classification_report(y_test, y_pred))
+        test_and_eval(model, file_path)
 
 
 if __name__ == "__main__":
