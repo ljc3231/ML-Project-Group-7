@@ -3,9 +3,10 @@ import pickle
 import argparse
 from time import perf_counter
 
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report, accuracy_score
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 gpu = False
 
@@ -33,13 +34,10 @@ def output_timing(seconds):
     """
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
-    result = ""
-    result += f"{int(hours)} hours" if hours > 0 else ""
-    result += f", {int(minutes)} minutes" if minutes > 0 else ""
-    result += f", {int(seconds)} seconds"
-    return result
+    times = [f"{int(hours)} hours" if hours > 0 else None, f"{int(minutes)} minutes" if minutes > 0 else None, f"{int(seconds)} seconds"]
+    return ", ".join(time for time in times if time is not None)
 
-def test_and_eval(model, file_path):
+def test_and_eval(args, model, file_path):
     try:
         df = pd.read_csv(file_path)
     except FileNotFoundError:
@@ -48,18 +46,23 @@ def test_and_eval(model, file_path):
 
     y_test, y_pred = test_svm(model, df)
 
-    y_pred = pd.Series(y_pred, name="is_anomaly")
+    y_pred = pd.Series(y_pred, name="is_anomaly").to_numpy()
 
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
-    plt.show()
+    plt.title(f"Confusion Matrix ({args.mode})")
+    figure_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", f"svm_confusion_matrix_{args.mode}.png")
+    plt.savefig(figure_path)
+    print(f"Confusion matrix saved to {figure_path}")
 
     print("Classification Report:")
     print(classification_report(y_test, y_pred))
 
     print("Confusion Matrix:")
     print(cm)
+
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 
 def train_svm(file_path):
     """
@@ -77,43 +80,51 @@ def train_svm(file_path):
     X = df.iloc[:, :-1].astype(np.float32)
     y = df.iloc[:, -1].astype(np.int32)
 
+    X_train_cpu = X.to_pandas().values.astype('float32')
+    y_train_cpu = y.to_pandas().values.astype('int32')
+
     base_model = SVC(kernel='rbf', class_weight='balanced')
 
     param_grid = {
-        'C': [0.1, 1, 10, 100],
-        'gamma': ['scale', 0.1, 0.01, 0.001]
+        'C': np.logspace(-3, 3, 10),
+        'gamma': np.logspace(-4, 1, 10)
     }
-
-    X_train_cpu = X.to_pandas().values.astype('float32')
-    y_train_cpu = y.to_pandas().values.astype('int32')
 
     search = GridSearchCV(
         estimator=base_model,
         param_grid=param_grid,
         cv=5,
         scoring='f1',
-        n_jobs=1,
+        n_jobs=1 if gpu else -1,
         verbose=2
     )
     search.fit(X_train_cpu, y_train_cpu)
     best_model = search.best_estimator_
+
+    scores = search.cv_results_['mean_test_score'].reshape(len(param_grid['C']),
+                                                           len(param_grid['gamma']))
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(scores, annot=True, fmt='.4f', cmap='viridis',
+                vmin=scores.min(), vmax=scores.max(),
+                xticklabels=[f"{g:.1e}" for g in param_grid['gamma']],
+                yticklabels=[f"{c:.1e}" for c in param_grid['C']])
+    plt.xlabel('Gamma')
+    plt.ylabel('C')
+    plt.title('Grid Search F1-Score')
+    plt.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", "svm_grid_search_f1_score.png"))
 
     print(f"Best parameters: {search.best_params_}")
 
     return best_model.as_sklearn() if gpu else best_model
 
 def test_svm(svm_model, df):
-    """
-    Test given model against given test-data
-    :param svm_model: Pre-trained model
-    :param df: Dataframe containing test-data
-    :return: test labels and predicted labels
-    """
     X = df.iloc[:, :-1].astype(np.float32)
     y = df.iloc[:, -1].astype(np.int32)
 
-    y_pred = svm_model.predict(X.values)
-    return y, (y_pred + 1) // 2
+    y_pred = svm_model.predict(X.to_numpy())
+
+    return y.to_numpy(), (y_pred + 1) // 2
 
 def save_svm(svm_model, filename):
     """
@@ -167,7 +178,7 @@ def main():
         save_svm(model, model_path)
 
         print("Finished training, testing against training data")
-        test_and_eval(model, file_path)
+        test_and_eval(args, model, file_path)
 
     else:
 
@@ -176,7 +187,7 @@ def main():
             return
 
         print(f"Testing {args.model_file} on {file_path}")
-        test_and_eval(model, file_path)
+        test_and_eval(args, model, file_path)
 
 
 if __name__ == "__main__":
