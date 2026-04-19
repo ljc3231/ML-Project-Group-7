@@ -2,11 +2,21 @@ import os
 import sys
 
 import pandas as pd
+from common import *
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 
 USE_PARTIAL_DATA = True
 
+def save(model, filename):
+    """
+    Serialize a model to a file
+    :param model: Model to save
+    :param filename: Destination file
+    :return: None
+    """
+    with open(filename, 'wb') as file:
+        pickle.dump(model, file)
 
 def knn(train_df, test_df, k=5):
     # used before PCA, but PCA should have removed all missing values and invariant features, so this is no longer necessary
@@ -26,7 +36,9 @@ def knn(train_df, test_df, k=5):
     X_test = test_df.iloc[:, :-1]
 
     knn_model = KNeighborsClassifier(n_neighbors=k, weights="distance")
+
     knn_model.fit(X_train, y_train)
+    save_model(knn_model, os.path.join(os.path.dirname(os.path.abspath(__file__)),"..", "data", "models", "knn_model.pkl"))
 
     y_pred = knn_model.predict(X_test)
 

@@ -98,24 +98,25 @@ def main():
     X = processed_data.drop(columns=["is_anomaly"])
     y = pd.DataFrame(processed_data["is_anomaly"])
 
-    pca = PCA(n_components=5)
-    X_pca = pd.DataFrame(pca.fit_transform(X))
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_pca, y, test_size=0.2, stratify=y
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
     )
 
-    training_data = pd.DataFrame(X_train)
-    training_data["is_anomaly"] = y_train
+    pca = PCA(n_components=5)
+    X_train_pca = pca.fit_transform(X_train_raw)
+    X_test_pca = pca.transform(X_test_raw)
 
-    testing_data = pd.DataFrame(X_test)
-    testing_data["is_anomaly"] = y_test
+    train_df = pd.DataFrame(X_train_pca)
+    train_df["is_anomaly"] = y_train.reset_index(drop=True)
+
+    test_df = pd.DataFrame(X_test_pca)
+    test_df["is_anomaly"] = y_test.reset_index(drop=True)
 
     output_dir = os.path.join(base_dir, "..", "data", "preprocessed")
     os.makedirs(output_dir, exist_ok=True)
 
-    training_data.to_csv(os.path.join(output_dir, "train_pca_" + suffix), index=False)
-    testing_data.to_csv(os.path.join(output_dir, "test_pca_" + suffix), index=False)
+    train_df.to_csv(os.path.join(output_dir, "train_pca_" + suffix), index=False)
+    test_df.to_csv(os.path.join(output_dir, "test_pca_" + suffix), index=False)
 
 
 if __name__ == "__main__":

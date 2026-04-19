@@ -1,9 +1,9 @@
 import os
-import pickle
 import argparse
 from time import perf_counter
 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report, accuracy_score
+from common import *
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -38,6 +38,13 @@ def output_timing(seconds):
     return ", ".join(time for time in times if time is not None)
 
 def test_and_eval(args, model, file_path):
+    """
+    Test a model on a given data-file and evaluate the results
+    :param args: Command-line arguments
+    :param model: Model to test
+    :param file_path: Test data-file
+    :return: None
+    """
     try:
         df = pd.read_csv(file_path)
     except FileNotFoundError:
@@ -120,37 +127,11 @@ def train_svm(file_path):
 
 def test_svm(svm_model, df):
     X = df.iloc[:, :-1].astype(np.float32)
-    y = df.iloc[:, -1].astype(np.int32)
+    y = df.iloc[:, -1].astype(np.int64)
 
     y_pred = svm_model.predict(X.to_numpy())
 
     return y.to_numpy(), (y_pred + 1) // 2
-
-def save_svm(svm_model, filename):
-    """
-    Serialize a model to a file
-    :param svm_model: Model to save
-    :param filename: Destination file
-    :return: None
-    """
-    with open(filename, 'wb') as file:
-        pickle.dump(svm_model, file)
-
-def load_svm(filename):
-    """
-    Load a model from a file
-    :param filename: File to load
-    :return: Loaded model
-    """
-    try:
-        with open(filename, 'rb') as file:
-            return pickle.load(file)
-    except EOFError:
-        print(f"{filename} is empty or corrupted.")
-        return None
-    except FileNotFoundError:
-        print(f"Model file not found: {filename}")
-        return None
 
 def main():
     parser = argparse.ArgumentParser(description="Train or test an SVM model")
@@ -175,14 +156,14 @@ def main():
         start = perf_counter()
         model = train_svm(file_path)
         print(output_timing(perf_counter() - start))
-        save_svm(model, model_path)
+        save_model(model, model_path)
 
         print("Finished training, testing against training data")
         test_and_eval(args, model, file_path)
 
     else:
 
-        model = load_svm(model_path)
+        model = load_model(model_path)
         if model is None:
             return
 

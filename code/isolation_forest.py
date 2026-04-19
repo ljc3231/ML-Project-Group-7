@@ -3,17 +3,19 @@ import sys
 
 import numpy as np
 import pandas as pd
+
+from common import *
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 USE_PARTIAL_DATA = True
-
 
 def train_model(training_data):
     X_train = training_data.iloc[:, :-1]
 
     model = IsolationForest(n_estimators=100, contamination=0.05)
     model.fit(X_train)
+    save_model(model, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..","data", "models", "iso_model.pkl"))
 
     return model
 
