@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from common import save_model, generate_confusion_matrix
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score
 
 GPU = False
 
@@ -47,6 +47,10 @@ def knn(train_df, test_df, k=5):
         y_pred = y_pred.to_numpy()
 
     accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average="binary")
+    recall = recall_score(y_test, y_pred, average="binary")
+    f1 = f1_score(y_test, y_pred, average="binary")
+
     # train_figure = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", f"{k}nn_confusion_matrix_train.png")
     test_figure = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", f"{k}nn_confusion_matrix_test.png")
     # cm_train = generate_confusion_matrix(y_train, knn_model.predict(X_train), train_figure, "train")
@@ -57,7 +61,7 @@ def knn(train_df, test_df, k=5):
     print("\nConfusion Matrix:")
     print(cm_test)
 
-    return accuracy
+    return accuracy, precision, recall, f1
 
 
 def main():
@@ -85,7 +89,11 @@ def main():
 
     # N = 3 is (very) slightly worse than n = 1, but we use 3 as to prevent potential overfitting and to combat potential noise
     print("\n\nRunning KNN with k=3")
-    print("Accuracy: ", knn(train_df, test_df, k=3))
+    accuracy, precision, recall, f1 = knn(train_df, test_df, k=3)
+    print("Accuracy: ", accuracy)
+    print("Recall: ", recall)
+    print("Precision: ", precision)
+    print("F1: ", f1)
 
 
 if __name__ == "__main__":
