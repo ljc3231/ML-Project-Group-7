@@ -3,7 +3,6 @@ import subprocess
 import sys
 
 
-
 def main():
     if len(sys.argv) != 2 or (sys.argv[1] != "partial" and sys.argv[1] != "full"):
         print("Unknown arguments; stopping execution")
