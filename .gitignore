@@ -2,3 +2,4 @@ data/kddcup_full.csv
 data/preprocessed/test_pca_kddcup_full.csv
 data/preprocessed/train_pca_kddcup_full.csv
 data/kddcup99_10-py3/
+data/kddcup99-py3/

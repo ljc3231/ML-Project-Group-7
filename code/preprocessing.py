@@ -94,12 +94,21 @@ def main():
 
     processed_data = csv_to_df(file_path)
     processed_data = reject_invariant_features(processed_data)
+    
+    #print("After preprocessing:", processed_data.shape)
 
     X = processed_data.drop(columns=["is_anomaly"])
     y = pd.DataFrame(processed_data["is_anomaly"])
-
-    pca = PCA(n_components=5)
+    
+    #print("Before PCA:", X.shape)
+    
+    
+    #print(f"Varaince: {i}")
+    #pick features that maintain 95% of original variance
+    pca = PCA(n_components=0.95)
     X_pca = pd.DataFrame(pca.fit_transform(X))
+    
+    #print("After PCA:", X_pca.shape)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X_pca, y, test_size=0.2, stratify=y
@@ -110,6 +119,9 @@ def main():
 
     testing_data = pd.DataFrame(X_test)
     testing_data["is_anomaly"] = y_test
+    
+    #print("Train shape:", training_data.shape)
+    #print("Test shape:", testing_data.shape)
 
     output_dir = os.path.join(base_dir, "..", "data", "preprocessed")
     os.makedirs(output_dir, exist_ok=True)
@@ -121,9 +133,12 @@ def main():
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] == "full":
+            print("Running Full")
             USE_PARTIAL_DATA = False
         elif sys.argv[1] != "partial":
             print("Unknown arguments; stopping execution")
             exit(1)
+        else:
+            print("Running Partial")
 
     main()

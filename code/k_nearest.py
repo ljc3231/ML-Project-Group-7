@@ -63,7 +63,7 @@ def main():
     # print(f"\n\nRunning KNN with k={k}")
     # print("Accuracy: ", knn(train_df, test_df, k=k))
 
-    # N = 3 is (extremely) slightly worse than n = 1, but we use 3 as to prevent potential overfitting and to combat potential noise
+    # N = 3 is (very) slightly worse than n = 1, but we use 3 as to prevent potential overfitting and to combat potential noise
     print("\n\nRunning KNN with k=3")
     print("Accuracy: ", knn(train_df, test_df, k=3))
 
