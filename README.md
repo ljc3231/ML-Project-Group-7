@@ -20,8 +20,8 @@ network traffic as anomalous or normal. To do this, we have employed a number of
 
 ## How to Run
 Our models can be ran through our driver.py file:
-\> python3 ./code/driver.py full
+> python3 ./code/driver.py full
 -> will run the 3 models with the full kdd-cup-99 dataset
 
-\> python3 ./code/driver.py partial
+> python3 ./code/driver.py partial
 -> will run the 3 models with kdd-cup-99-10percent dataset

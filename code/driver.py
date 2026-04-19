@@ -2,10 +2,6 @@ import os
 import subprocess
 import sys
 
-import pandas as pd
-from matplotlib import pyplot as plt
-from sklearn.metrics import RocCurveDisplay
-from common import load_model
 
 
 def main():
