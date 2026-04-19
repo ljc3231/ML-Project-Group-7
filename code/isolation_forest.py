@@ -6,7 +6,7 @@ import pandas as pd
 
 from common import *
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report
 
 USE_PARTIAL_DATA = True
 
@@ -33,7 +33,9 @@ def evaluate_model(model, testing_data):
     print(
         f"Classification Report:\n{classification_report(y_test_transformed, y_pred)}"
     )
-    print(f"Confusion Matrix:\n{confusion_matrix(y_test_transformed, y_pred)}")
+    figure_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", "iso_confusion_matrix.png")
+    cm = generate_confusion_matrix(y_test_transformed, y_pred, figure_path, "test")
+    print(f"Confusion Matrix:\n{cm}")
 
 
 def main():

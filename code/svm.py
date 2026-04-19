@@ -2,7 +2,7 @@ import os
 import argparse
 from time import perf_counter
 
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report, accuracy_score
+from sklearn.metrics import classification_report, accuracy_score
 from common import *
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,17 +26,6 @@ TEST_FULL = "test_pca_kddcup_full.csv"
 TEST_10 = "test_pca_kddcup_10_percent.csv"
 MODEL_FILE = "data/models/svm_model.pkl"
 
-def output_timing(seconds):
-    """
-    Transforms seconds into a human-readable string
-    :param seconds: Number of seconds
-    :return: Human-readable string
-    """
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    times = [f"{int(hours)} hours" if hours > 0 else None, f"{int(minutes)} minutes" if minutes > 0 else None, f"{int(seconds)} seconds"]
-    return ", ".join(time for time in times if time is not None)
-
 def test_and_eval(args, model, file_path):
     """
     Test a model on a given data-file and evaluate the results
@@ -55,13 +44,8 @@ def test_and_eval(args, model, file_path):
 
     y_pred = pd.Series(y_pred, name="is_anomaly").to_numpy()
 
-    cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot()
-    plt.title(f"Confusion Matrix ({args.mode})")
     figure_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", f"svm_confusion_matrix_{args.mode}.png")
-    plt.savefig(figure_path)
-    print(f"Confusion matrix saved to {figure_path}")
+    cm = generate_confusion_matrix(y_test, y_pred, figure_path, args.mode)
 
     print("Classification Report:")
     print(classification_report(y_test, y_pred))
