@@ -102,7 +102,7 @@ def main():
         X, y, test_size=0.2, stratify=y, random_state=42
     )
 
-    pca = PCA(n_components=5)
+    pca = PCA(n_components=0.95)
     X_train_pca = pca.fit_transform(X_train_raw)
     X_test_pca = pca.transform(X_test_raw)
 
@@ -122,9 +122,12 @@ def main():
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] == "full":
+            print("Running Full")
             USE_PARTIAL_DATA = False
         elif sys.argv[1] != "partial":
             print("Unknown arguments; stopping execution")
             exit(1)
+        else:
+            print("Running Partial")
 
     main()
