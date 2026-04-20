@@ -3,19 +3,28 @@ import sys
 
 import numpy as np
 import pandas as pd
-
 from common import *
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import accuracy_score, classification_report
 
 USE_PARTIAL_DATA = True
 
+
 def train_model(training_data):
     X_train = training_data.iloc[:, :-1]
 
-    model = IsolationForest(n_estimators=100, contamination=0.05)
+    model = IsolationForest(n_estimators=100, contamination=0.2)
     model.fit(X_train)
-    save_model(model, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..","data", "models", "iso_model.pkl"))
+    save_model(
+        model,
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "data",
+            "models",
+            "iso_model.pkl",
+        ),
+    )
 
     return model
 
@@ -29,11 +38,17 @@ def evaluate_model(model, testing_data):
     y_pred = model.predict(X_test)
 
     print("Evaluation Results (using testing data):")
-    print(f"Accuracy:{accuracy_score(y_test_transformed, y_pred)}\n")
+    print(f"Accuracy: {accuracy_score(y_test_transformed, y_pred)}\n")
     print(
         f"Classification Report:\n{classification_report(y_test_transformed, y_pred)}"
     )
-    figure_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "plots", "iso_confusion_matrix.png")
+    figure_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "data",
+        "plots",
+        "iso_confusion_matrix.png",
+    )
     cm = generate_confusion_matrix(y_test_transformed, y_pred, figure_path, "test")
     print(f"Confusion Matrix:\n{cm}")
 
